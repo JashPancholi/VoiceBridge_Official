@@ -26,13 +26,26 @@
     margin: 0 auto;
 }
 
-#transcriptOutput, #translationOutput {
+#translationOutput {
     white-space: pre-wrap;
     word-wrap: break-word;
     max-width: 80%;
-    margin: 0 auto;
-    line-height: 1.6;
+    margin: 20px auto;
+    padding: 20px;
+    line-height: 1.8;
+    background-color: #f9f9f9;
+    font-size: 16px;
+    color: #333;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.3s ease;
 }
+
+#text_bg {
+    padding: 10px;
+    background-color: transparent;
+}
+
 
 .action-buttons {
     display: flex;
@@ -41,6 +54,7 @@
 }
 
 .action-buttons button {
+    margin-top:10px;
     padding: 10px 20px;
     font-size: 16px;
     background-color: #ccc;
@@ -54,6 +68,209 @@
     background-color: #bbb;
 }
 
-.modal { display: none; position: fixed; z-index: 999; padding: 50px; background: rgba(0,0,0,0.6); top: 0; left: 0; width: 100%; height: 100%; }
-.modal-content { background: white; padding: 20px; margin: auto; width: 300px; border-radius: 10px; }
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 20px 30px;
+    width: 90%;
+    max-width: 320px;
+    color: #fff;
+    font-family: sans-serif;
+    position: relative;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+/* Close button */
+.modal-content .close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #fff;
+}
+
+/* Form inputs */
+.modal-content label {
+    display: block;
+    margin: 12px 0 4px;
+    font-size: 14px;
+    color: #f1f1f1;
+}
+
+.modal-content input[type="text"] {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+}
+
+/* Submit button */
+.modal-content button[type="submit"] {
+    margin-top: 20px;
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.modal-content button[type="submit"]:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+.modal-content select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6l4 4 4-4' stroke='white' stroke-width='2' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    cursor: pointer;
+}
+
+/* Force option style in some browsers */
+.modal-content select option {
+    background-color: #2a2a2a;
+    color: #fff;
+}
+
+
+
 .output-box { margin-top: 20px; padding: 10px; background: #f4f4f4; }
+
+.tab-buttons {
+    display: flex;                /* This aligns children horizontally */
+    justify-content: center;     /* Center them horizontally */
+    gap: 20px;                    /* Space between buttons */
+    margin-top: 70px;
+}
+
+.tab-buttons button {
+    padding: 10px 20px;
+    display: flex;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+/* Default hover: Light translucent blue */
+.tab-buttons button:hover {
+    background-color: rgba(0, 123, 255, 0.2);
+}
+
+/* Hover override via JS class */
+.tab-buttons button.transcript-pending:hover {
+    background-color: rgba(255, 255, 0, 0.3); /* Yellow */
+}
+
+.tab-buttons button.transcript-done:hover {
+    background-color: rgba(0, 255, 0, 0.3); /* Green */
+}
+.tab-buttons button.translate-pending:hover {
+    background-color: rgba(255, 255, 0, 0.3); /* Yellow for pending */
+}
+
+.tab-buttons button.translate-done:hover {
+    background-color: rgba(0, 255, 0, 0.3); /* Green for done */
+}
+.tab-content {
+    display: none;
+    padding: 20px;
+}
+.tab-content.active {
+    display: block;
+}
+
+.transcript-container {
+    position: relative;
+    padding-bottom: 50px; /* enough room for the button */
+}
+
+#transcriptOutput {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-width: 80%;
+    margin: 20px auto;
+    padding: 20px;
+    line-height: 1.8;
+    background-color: #f9f9f9;
+    font-size: 16px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.save-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 110px;
+    background-color: #4CAF50;
+    color: white;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.save-btn:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+}
+
+.save-btn:hover:enabled {
+    background-color: #45a049;
+}
+
+#loadBarContainer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background-color: #e0e0e0;
+    z-index: 9999;
+}
+
+#loadBar {
+    width: 0%;
+    height: 100%;
+    background-color: #4CAF50;
+    transition: width 0.4s ease;
+}

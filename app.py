@@ -69,6 +69,7 @@ mongo = PyMongo(app)
 
 # Collection reference
 users = mongo.db.users
+transcript_collection = mongo.db.Org_Transcript
 
 @app.route('/')
 def home_default(): 
@@ -349,6 +350,27 @@ def process_action():
         'transcript': transcript_text,
         'translation': translation_text
     })
+    
+@app.route('/save_transcript', methods=['POST'])
+def save_transcript():
+    try:
+        data = request.get_json()
+        transcript = data.get('transcript', 'transcript not saved by user')
+        video_name = data.get('video_name')
+        username = data.get('username')
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        transcript_collection.insert_one({
+            "username": username,
+            "video_name": video_name,
+            "transcript": transcript,
+            "timestamp": timestamp
+        })
+
+        return jsonify({"status": "success", "message": "Transcript saved successfully!"})
+    except Exception as e:
+        print(f"Error in /save_transcript: {e}")
+        return jsonify({"status": "error", "message": "Failed to save transcript."})
 
 if __name__ == "__main__":
     app.run(debug=True)
