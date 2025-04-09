@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Page</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reg.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/error.css') }}">
+    
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="home.html">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="VoiceBridge">
+            </a>
+        </div>
+        <ul class="nav-links">  
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="#" class="active">Register</a></li>
+        </ul>
+    </nav>
+
+    <div class="glass-container-signup">
+        <div class="login-box">
+            <h2>Register</h2>
+            <form id="registrationForm">
+                <input type="text" id="fullname" name="fullname" required placeholder="Full Name">
+                <input type="email" id="email" name="email" required placeholder="Email">
+                <input type="text" id="username" name="username" required placeholder="Username">
+                <input type="password" id="password" name="password" required placeholder="Password">
+                <input type="password" id="confirm-password" name="confirm-password" required placeholder="Confirm Password">
+                
+                <div class="options">
+                    <input type="checkbox" id="terms" name="terms" required>
+                    <label for="terms">I agree to the <a href="#">Terms & Conditions</a></label>
+                </div>
+                
+                <button type="submit">Sign Up</button>
+            
+                <p>Already have an account? <a href="login.html" id="login">Login</a></p>
+                
+                <div id="errorContainer" class="error"></div>
+            </form>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/reg.js') }}"></script>
+</body>
+</html>

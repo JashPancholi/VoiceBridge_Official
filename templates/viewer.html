@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Video Viewer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/viewer.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/drop.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/success.css') }}">
+    <style>
+        .tab-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin-top: 60px;
+        }
+        .tab-buttons button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="dashboard.html">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="VoiceBridge">
+            </a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="dashboard.html" >🏠︎</a></li>
+            <li>
+                <a>☰</a>
+                <ul class='dropdown'>
+                    <li><a href="{{ url_for('profile') }}">Profile</a></li>
+                    <li><a href="about-logged-in.html" >About Us</a></li>
+                    <li><a href="/logout">⍈ logout</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="tab-buttons">
+        <button onclick="showTab('videoTab')">🎥 Video</button>
+        <button onclick="showTab('transcriptTab')">📝 Transcript</button>
+        <button onclick="showTab('translateTab')">🌐 Translate</button>
+    </div>
+    <div id="successContainer"></div>
+    <div id="videoTab" class="tab-content active">
+        <h2>Video Preview</h2>
+        <video id="videoPlayer" width="720" controls></video>
+        <div class="action-buttons">
+                <button type="button" onclick="openModal('transcribe')">Transcribe</button>
+                <button type="button" onclick="openModal('translate')">Translate</button>
+        </div>
+    </div>
+
+    <div id="transcriptTab" class="tab-content">
+        <h2 style="text-align: center;">Orignal Transcript Output</h2>
+        <pre id="transcriptOutput">{{ transcript_text if transcript_text else 'No transcription yet.' }}</pre>
+    </div>
+
+    <div id="translateTab" class="tab-content">
+        <h2 style="text-align: center;">Translation Output</h2>
+        <pre id="translationOutput">{{ translation_text if translation_text else 'No translation yet.' }}</pre>
+    </div>
+
+<!-- Modal for language selection -->
+<div id="popupModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <form id="actionForm">
+          <label for="sourceLang">Source Language:</label>
+          <input type="text" id="sourceLang" name="sourceLang" required>
+  
+          <label for="targetLang">Target Language:</label>
+          <input type="text" id="targetLang" name="targetLang">
+  
+          <input type="hidden" id="actionType" name="actionType">
+          <button type="submit">Submit</button>
+      </form>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='js/view.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+    font-family: Arial, sans-serif;
+    user-select: none; /* Disable text selection */
+}
+
+.content-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.hero {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 10px;
+}
+
+.hero h1 {
+    font-size: 3rem; /* Increased text size */
+    color: black;
+    margin-bottom: 15px;
+}
+
+.hero p {
+    font-size: 1.3rem;
+    color: #444;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.drop-box {
+    width: 600px; /* Enlarged width */
+    height: 350px; /* Enlarged height */
+    border: 2px dashed black;
+    border-radius: 10px;
+    background-color: rgba(180, 180, 180, 0.6);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+.drop-box.drag-over {
+    background-color: rgba(160, 160, 160, 0.8);
+}
+
+.drop-box button {
+    margin-top: 15px;
+    padding: 15px 30px; /* Slightly bigger button */
+    background-color: black;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.drop-box button:hover {
+    background-color: #333;
+}
+
+.drop-box p{
+    font-size: 1.2rem;
+    color: #333;
+}
+.drop-box button{
+    font-size: 1rem;
+    color: white;
+}
+#fileName {
+    margin-top: 10px;
+    font-size: 1rem;
+    color: #333;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 50; /* Lower than navbar */
+}
+
+
+.media-player-container {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+    z-index: 11;
+}
+
+video {
+    width: 80%;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.action-buttons button, .drop-box button {
+    padding: 10px 30px;
+    background-color: rgba(0, 0, 0, 0.455);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.action-buttons button:hover, .drop-box button:hover {
+    background-color: #333;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+#tratranscriptBtn{
+    padding: -5px;
+}
+
+.error-message {
+    color: red;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.logo img {
+    margin-left: 21px;
+}

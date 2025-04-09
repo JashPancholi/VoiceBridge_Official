@@ -1,0 +1,9 @@
+#errorContainer {
+    position: absolute;
+    top: 600px;
+    width: 320px;
+    left: 50%;
+    bottom: -100px; /* Adjusted spacing below form */
+    transform: translateX(-50%);
+    text-align: center;
+}

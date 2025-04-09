@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/drop.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
+
+
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <a href="dashboard.html">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="VoiceBridge">
+            </a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="dashboard.html" >🏠︎</a></li>
+            <li>
+                <a>☰</a>
+                <ul class='dropdown'>
+                    <li><a href="#" class="active">Profile</a></li>
+                    <li><a href="about-logged-in.html" >About Us</a></li>
+                    <li><a href="/logout">⍈ logout</a></li>
+                </ul>
+            </li>
+            </li>
+        </ul>
+    </nav>
+<!-- Profile Container -->
+<div class="profile-container">
+    <div class="profile-card">
+        <div class="profile-pic-container">
+            <img id="profile-pic" src="{{ url_for('static', filename='images/' + (user['profile_pic'] if user['profile_pic'] else 'default.jpg')) }}" alt="Profile Picture" onclick="document.getElementById('uploadModal').style.display='block'">
+        </div>
+        <h2>{{ user['fullname'] }}</h2>
+        <p>{{ user['email'] }}</p>
+        <p>{{ user['username'] }}</p>
+        <button onclick="document.getElementById('editModal').style.display='block'">Edit Details</button>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="document.getElementById('editModal').style.display='none'">&times;</span>
+        <h2>Edit Profile Details</h2>
+        <form action="{{ url_for('update_profile') }}" method="POST">
+            <label for="fullname">Full Name:</label>
+            <input type="text" id="fullname" name="fullname" value="{{ user['fullname'] }}" required>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="{{ user['email'] }}" required>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" value="{{ user['username'] }}" required>
+            <button type="submit">Save Changes</button>
+        </form>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="document.getElementById('uploadModal').style.display='none'">&times;</span>
+        <h2>Upload New Profile Picture</h2>
+        <form action="/upload_profile_pic" method="POST" enctype="multipart/form-data">
+            <input type="file" name="profile_pic" id="upload-btn" required>
+            <button type="submit">Upload New Picture</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+        if (event.target.className === 'modal') {
+            event.target.style.display = "none";
+        }
+    }
+</script>
+</body>
+</html>

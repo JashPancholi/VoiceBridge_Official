@@ -1,0 +1,59 @@
+.content-container {
+    max-width: 800px;
+    margin: 65px auto;
+    text-align: center;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#videoPlayer {
+    width: 100%;
+    max-width: 1080px;
+    height: auto; /* Fixed 16:9 ratio */
+    border-radius: 10px;
+    border: 2px solid #ddd;
+    background-color: #000;
+    margin-bottom: 20px;
+}
+#videoTab{
+    text-align: center;
+}
+
+#videoPlayer {
+    display: block;
+    margin: 0 auto;
+}
+
+#transcriptOutput, #translationOutput {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-width: 80%;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.action-buttons button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #ccc;
+    border: none;
+    border-radius: 8px;
+    color: #666;
+    transition: 0.3s ease;
+}
+
+.action-buttons button:hover {
+    background-color: #bbb;
+}
+
+.modal { display: none; position: fixed; z-index: 999; padding: 50px; background: rgba(0,0,0,0.6); top: 0; left: 0; width: 100%; height: 100%; }
+.modal-content { background: white; padding: 20px; margin: auto; width: 300px; border-radius: 10px; }
+.output-box { margin-top: 20px; padding: 10px; background: #f4f4f4; }

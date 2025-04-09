@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>homepage</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">
+            <a href="#">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="VoiceBridge">
+            </a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="reg.html">Register</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <h1>Now we're speaking your language.</h1>
+        <p>With a few clicks you can speak 175 languages, in your voice, with your lips perfectly synced. This isn’t dubbing. It’s AI magic.</p>
+        <a href="login.html" class="cta-button">Get started</a>
+    </section>
+
+
+</body>
+</html>

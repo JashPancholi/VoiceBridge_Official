@@ -1,0 +1,37 @@
+/* Success container (stacks messages properly) */
+#successContainer {
+    position: fixed;
+    top: 130px; /* just above the error container */
+    width: 320px;
+    right: -10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+}
+
+/* Individual success box */
+.successBox {
+    background-color: rgba(0, 255, 0, 0.15);
+    border-left: 5px solid #28a745;
+    padding: 12px;
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: #155724;
+    box-shadow: 0px 4px 10px rgba(40, 167, 69, 0.2);
+    opacity: 0;
+    animation: fadeIn 0.5s forwards, fadeOut 0.5s 4.5s forwards;
+}
+
+/* Fade in effect */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Fade out effect */
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-10px); }
+}

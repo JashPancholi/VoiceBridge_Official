@@ -1,0 +1,66 @@
+/* Color Scheme */
+:root {
+    --primary-color: #2ca7e0;
+    --dark-color: #1e1e1e;
+}
+
+/* Reset */
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: url('background.jpg') no-repeat center center fixed;
+    background-size: cover;
+}
+
+/* Translucent Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.4); /* Increased opacity for more brightness */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Lighter shadow */
+    z-index: 100;
+}
+
+
+.logo img {
+    height: 35px;
+}
+
+/* Navigation */
+.nav-links {
+    list-style: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--primary-color);
+    font-weight: bold;
+    font-size: 15px;
+    padding: 5px 10px;
+    margin-right: 35px;
+    transition: color 0.3s ease;
+    border-radius: 5px;
+}
+
+.nav-links a:hover {
+    color: #fff;
+    background: var(--primary-color);
+}
+
+/* Active Link */
+.nav-links a.active {
+    background: var(--primary-color);
+    color: white;
+    border-radius: 5px;
+}
+

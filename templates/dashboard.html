@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Drop-in Box</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dash.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/drop.css') }}">
+    <style>
+        
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="dashboard.html">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="VoiceBridge">
+            </a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="dashboard.html" >🏠︎</a></li>
+            <li>
+                <a>☰</a>
+                <ul class='dropdown'>
+                    <li><a href="{{ url_for('profile') }}">Profile</a></li>
+                    <li><a href="about-logged-in.html" >About Us</a></li>
+                    <li><a href="/logout">⍈ logout</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="overlay" id="overlay">
+        <div class="media-player-container" id="mediaPlayerContainer">
+            <p id="selectedFileName"></p>
+            <video id="videoPlayer" controls></video>
+            <div class="action-buttons">
+                <button id="transcriptBtn">Transcript</button>
+                <button id="translateBtn">Translate</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-container">
+        <section class="hero">
+            <h1>Upload Your Video</h1>
+            <p>Upload your video file below to get started.</p>
+        </section>
+
+        <p><strong>Note:</strong> Only <em>.mp4</em> files are accepted. Ensure your file is in the correct format before uploading.</p>
+
+        <div class="drop-box" id="dropBox">
+            <p>Drag & Drop your file here</p>
+            <input type="file" id="fileInput" hidden accept="video/mp4">
+            <button id="uploadBtn">Choose File</button>
+            <p id="fileName"></p>
+            <p id="errorMessage" class="error-message"></p>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/dash.js') }}"></script>
+</body>
+</html>

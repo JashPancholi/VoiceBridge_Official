@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - VoiceBridge</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/about.css') }}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <a href="home.html">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="VoiceBridge">
+            </a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#" class="active">About Us</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="reg.html">Register</a></li>
+        </ul>
+    </nav>
+
+    <!-- Team Section -->
+    <section class="team-container">
+        <h1 class="team-title">Meet Our Team</h1>
+
+        <!-- Section 1 - partner on Left -->
+        <div class="team-member left">
+            <img src="{{ url_for('static', filename='images/partner1.jpg') }}" alt="Partner 1" class="partner-pic">
+            <div class="member-details">
+                <h2>Krish Mody</h2>
+                <p>Roll No: F029</p>
+                <p>Batch: F1</p>
+                <p>Division: F</p>
+                <p>SAP ID: 70372200024</p>
+            </div>
+        </div>
+
+        <!-- Section 2 - partner on Right -->
+        <div class="team-member right">
+            <div class="member-details">
+                <h2>Joash Pometkar</h2>
+                <p>Roll No: F010</p>
+                <p>Batch: F1</p>
+                <p>Division: F</p>
+                <p>SAP ID: 70372200065</p>
+            </div>
+            <img src="{{ url_for('static', filename='images/partner2.jpg') }}" alt="Partner 2" class="partner-pic">
+        </div>
+
+        <!-- Section 3 - partner on Left -->
+        <div class="team-member left">
+            <img src="{{ url_for('static', filename='images/partner3.jpg') }}" alt="Partner 3" class="partner-pic">
+            <div class="member-details">
+                <h2>Jash Pancholi</h2>
+                <p>Roll No: F029</p>
+                <p>Batch: F1</p>
+                <p>Division: F</p>
+                <p>SAP ID: 70372200007</p>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
