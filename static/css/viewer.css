@@ -8,6 +8,16 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+.infoBox {
+    background-color: #3498db;
+    color: white;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.3s ease-in-out;
+}
+
 #videoPlayer {
     width: 100%;
     max-width: 1080px;
@@ -220,7 +230,28 @@
     padding-bottom: 50px; /* enough room for the button */
 }
 
+.translate-container {
+    position: relative;
+    padding-bottom: 50px; /* enough room for the button */
+}
+
+
 #transcriptOutput {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-width: 80%;
+    margin: 20px auto;
+    padding: 20px;
+    line-height: 1.8;
+    background-color: #f9f9f9;
+    font-size: 16px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+#translationOutput {
     white-space: pre-wrap;
     word-wrap: break-word;
     max-width: 80%;
@@ -274,3 +305,6 @@
     background-color: #4CAF50;
     transition: width 0.4s ease;
 }
+
+
+

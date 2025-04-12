@@ -1,55 +1,56 @@
+// Function to switch between tabs (transcript and translation)
 function showTab(tabId) {
     const tabs = document.querySelectorAll('.tab-content');
     tabs.forEach(tab => tab.classList.remove('active'));
     document.getElementById(tabId).classList.add('active');
 }
 
-document.getElementById('videoPlayer').src = '/static/status/current.mp4';
-
-
+// Function to close the language selection modal
 function closeModal() {
     document.getElementById('popupModal').style.display = "none";
 }
 
-document.getElementById('actionForm').onsubmit = async function (e) {
+// Handle form submission for transcription/translation
+document.getElementById('actionForm').onsubmit = async function(e) {
     e.preventDefault();
     closeModal();
     startLoadingBar();
+    startProgressUpdates();
 
     const formData = new FormData(this);
     const actionType = formData.get('actionType');
-
+    
+    // Set to transcribe_and_translate for automatic translation
+    if (actionType === 'transcribe') {
+        formData.set('actionType', 'transcribe');
+    }
+    
     try {
         const response = await fetch('/process', {
             method: 'POST',
             body: formData
         });
-
+        
         const data = await response.json();
-
-         // 🔄 Move here!
-
+        
+        // Update UI with results
         document.getElementById('transcriptOutput').textContent = data.transcript || "";
         document.getElementById('translationOutput').textContent = data.translation || "";
+        
         completeLoadingBar();
         
-        if (actionType === 'transcribe' && data.transcript) {
+        // Update UI elements based on results
+        if (data.transcript) {
             showSuccess("📝 Transcription completed successfully!");
+            showSuccess("🌐 Translated Transcript completed successfully!");
             document.getElementById('saveTranscriptBtn').disabled = false;
-            const transcriptBtn = document.getElementById('transcriptBtn');
-            transcriptBtn.classList.remove('transcript-pending');
-            transcriptBtn.classList.add('transcript-done');
-            transcriptBtn.title = 'Transcript ready';
-        } else if (actionType === 'translate' && data.translation) {
-            showSuccess("🌐 Translation completed successfully!");
-            const translateBtn = document.getElementById('translateBtn');
-            translateBtn.classList.remove('translate-pending');
-            translateBtn.classList.add('translate-done');
-            translateBtn.title = 'Translation ready';
-        } else {
-            showError("Processing failed. Please try again.");
+            updateButtonStatus('transcriptBtn', true);
         }
-
+        
+        if (data.translation) {
+            showSuccess("🌐 Translation completed successfully!");
+            updateButtonStatus('translateBtn', true);
+        }
     } catch (err) {
         completeLoadingBar();
         console.error("Error:", err);
@@ -57,84 +58,59 @@ document.getElementById('actionForm').onsubmit = async function (e) {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.getElementById('popupModal');
-    modal.style.display = "none";
-    const transcriptBtn = document.getElementById('transcriptBtn');
-    const transcriptText = document.getElementById('transcriptOutput').textContent.trim();
-
-    if (!transcriptText || transcriptText === 'No transcription yet.') {
-        transcriptBtn.classList.add('transcript-pending');
-        transcriptBtn.title = 'Transcript not ready';
+// Update button status (visual feedback)
+function updateButtonStatus(buttonId, isComplete) {
+    const button = document.getElementById(buttonId);
+    if (isComplete) {
+        button.classList.remove(buttonId === 'transcriptBtn' ? 'transcript-pending' : 'translate-pending');
+        button.classList.add(buttonId === 'transcriptBtn' ? 'transcript-done' : 'translate-done');
+        button.title = buttonId === 'transcriptBtn' ? 'Transcript ready' : 'Translation ready';
     } else {
-        transcriptBtn.classList.add('transcript-done');
-        transcriptBtn.title = 'Transcript ready';
-
-        // ✅ Enable save button if transcript is already there
-        document.getElementById('saveTranscriptBtn').disabled = false;
-    }
-
-    const translateBtn = document.getElementById('translateBtn');
-    const translationText = document.getElementById('translationOutput').textContent.trim();
-
-    if (!translationText || translationText === 'No translation yet.') {
-        translateBtn.classList.add('translate-pending');
-        translateBtn.title = 'Translation not ready';
-    } else {
-        translateBtn.classList.add('translate-done');
-        translateBtn.title = 'Translation ready';
-    }
-
-    document.getElementById('saveTranscriptBtn').addEventListener('click', saveTranscript);
-});
-
-document.getElementById('popupModal').style.display = "flex";
-
-async function saveTranscript() {
-    const transcript = document.getElementById('transcriptOutput').textContent.trim();
-    const videoName = "current.mp4"; // Replace with dynamic value if available
-    const username = "john_doe";     // Replace with actual logged-in user dynamically
-
-    if (!transcript || transcript === 'No transcription yet.') {
-        showError("Transcript is empty. Please transcribe the video first.");
-        return;
-    }
-
-    try {
-        const response = await fetch('/save_transcript', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                transcript: transcript,
-                video_name: videoName,
-                username: username
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.status === "success") {
-            showSuccess(data.message || "✅ Transcript saved successfully!");
-        } else {
-            showError(data.message || "❌ Failed to save transcript.");
-        }
-    } catch (error) {
-        console.error("Error saving transcript:", error);
-        showError("🚫 Error occurred while saving transcript.");
+        button.classList.add(buttonId === 'transcriptBtn' ? 'transcript-pending' : 'translate-pending');
+        button.classList.remove(buttonId === 'transcriptBtn' ? 'transcript-done' : 'translate-done');
+        button.title = buttonId === 'transcriptBtn' ? 'Transcription in progress...' : 'Translation in progress...';
     }
 }
 
+// Show success messages
+function showSuccess(message) {
+    const successContainer = document.getElementById('successContainer');
+    const successBox = document.createElement('div');
+    successBox.classList.add('successBox');
+    successBox.textContent = message;
+    successContainer.appendChild(successBox);
+    setTimeout(() => successBox.remove(), 5000);
+}
 
+// Show error messages
+function showError(message) {
+    const errorContainer = document.getElementById('errorContainer');
+    if (!errorContainer) return;
+    const errorBox = document.createElement('div');
+    errorBox.classList.add('errorBox');
+    errorBox.textContent = message;
+    errorContainer.appendChild(errorBox);
+    setTimeout(() => errorBox.remove(), 5000);
+}
+
+// Show info messages
+function showInfo(message) {
+    const infoContainer = document.getElementById('successContainer');
+    const infoBox = document.createElement('div');
+    infoBox.classList.add('infoBox');
+    infoBox.textContent = message;
+    infoContainer.appendChild(infoBox);
+    setTimeout(() => infoBox.remove(), 5000);
+}
+
+// Open the language selection modal
 function openModal(action) {
     const modal = document.getElementById('popupModal');
-    modal.style.display = "flex"; // This ensures modal shows centered
-    modal.style.alignItems = "center";     // In case it needs re-centering
+    modal.style.display = "flex";
+    modal.style.alignItems = "center";
     modal.style.justifyContent = "center";
-
     document.getElementById('actionType').value = action;
-
+    
     if (action === 'transcribe') {
         const transcriptBtn = document.getElementById('transcriptBtn');
         transcriptBtn.classList.add('transcript-pending');
@@ -148,39 +124,20 @@ function openModal(action) {
     }
 }
 
-function showSuccess(message) {
-    const successContainer = document.getElementById('successContainer');
-    const successBox = document.createElement('div');
-    successBox.classList.add('successBox');
-    successBox.textContent = message;
-    successContainer.appendChild(successBox);
-    setTimeout(() => successBox.remove(), 5000);
-}
-
-function showError(message) {
-    const errorContainer = document.getElementById('errorContainer');
-    if (!errorContainer) return;
-
-    const errorBox = document.createElement('div');
-    errorBox.classList.add('errorBox');
-    errorBox.textContent = message;
-    errorContainer.appendChild(errorBox);
-    setTimeout(() => errorBox.remove(), 5000);
-}
-
+// Start the loading bar animation
 function startLoadingBar() {
     const bar = document.getElementById('loadBar');
     bar.style.width = '0%';
-
     let progress = 0;
     bar.interval = setInterval(() => {
         if (progress < 90) {
-            progress += Math.random() * 5; // increases to simulate progression
+            progress += Math.random() * 5;
             bar.style.width = progress + '%';
         }
     }, 200);
 }
 
+// Complete the loading bar animation
 function completeLoadingBar() {
     const bar = document.getElementById('loadBar');
     clearInterval(bar.interval);
@@ -190,4 +147,62 @@ function completeLoadingBar() {
     }, 1000);
 }
 
+// Save transcript to database
+async function saveTranscript() {
+    // Get the transcript text from the element
+    const transcript = document.getElementById('transcriptOutput').textContent.trim();
+    const videoName = "current.mp4";
+    
+    // Get language values
+    const sourceLang = document.getElementById('sourceLang')?.value || 'en';
+    const targetLang = document.getElementById('targetLang')?.value || 'hi';
+    
+    if (!transcript || transcript === 'No transcription yet.') {
+        showError("Transcript is empty. Please transcribe the video first.");
+        return;
+    }
+    
+    try {
+        const response = await fetch('/save_transcript', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                transcript: transcript,
+                video_name: videoName,
+                source_lang: sourceLang,
+                target_lang: targetLang
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === "success") {
+            showSuccess(data.message || "✅ Transcript saved successfully!");
+        } else {
+            showError(data.message || "❌ Failed to save transcript.");
+        }
+    } catch (error) {
+        console.error("Error saving transcript:", error);
+        showError("🚫 Error occurred while saving transcript.");
+    }
+}
 
+function startProgressUpdates() {
+    const eventSource = new EventSource('/progress');
+    eventSource.onmessage = function(event) {
+        showInfo(event.data);
+        if (event.data.includes("✅")) {
+            eventSource.close(); // Close when done
+        }
+    };
+}
+
+// Initialize video source when page loads
+window.onload = function() {
+    const videoPlayer = document.getElementById('videoPlayer');
+    if (videoPlayer) {
+        videoPlayer.src = '/static/status/current.mp4';
+    }
+};

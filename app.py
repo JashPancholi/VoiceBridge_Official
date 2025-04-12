@@ -1,60 +1,12 @@
-# from flask import Flask, render_template, request, redirect, url_for, session, flash
-# from flask_pymongo import PyMongo
-
-# app = Flask(__name__)
-# app.config["MONGO_URI"] = "mongodb://localhost:27017/VoiceBridgeData"
-# app.secret_key = "E@syP@ssw0d@key"  # Change this to a strong secret key
-# mongo = PyMongo(app)
-
-# # Collection reference
-# users = mongo.db.users 
-
-# @app.route('/')
-# def home_default(): 
-#     return render_template('home.html')
-
-# @app.route('/login.html')
-# def login():
-#     return render_template('login.html')
-
-# @app.route('/reg.html')
-# def reg():
-#     return render_template('reg.html')
-
-# @app.route('/dashboard.html')
-# def dashboard():
-#     return render_template('dashboard.html')
-
-# @app.route('/about.html')
-# def about():
-#     return render_template('about.html')
-
-# @app.route('/about-logged-in.html')
-# def aboutloggedin():
-#     return render_template('about-logged-in.html')
-
-# @app.route('/home.html')
-# def home():
-#     return render_template('home.html')
-
-# @app.route('/logout')
-# def logout():
-#     session.clear()
-#     flash("You have been logged out.", "info")
-#     return redirect(url_for('home'))
-
-# if __name__=="__main__":
-#     app.run(debug=True)
-
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify,Response
 from flask_pymongo import PyMongo
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-import uuid
 from datetime import datetime
-import shutil
-import os
 from transcript import perform_transcription
+from translate import perform_translation
+import uuid,os,time,shutil,time
+
 
 
 app = Flask(__name__)
@@ -70,6 +22,7 @@ mongo = PyMongo(app)
 # Collection reference
 users = mongo.db.users
 transcript_collection = mongo.db.Org_Transcript
+translation_collection = mongo.db.TranslatedResults
 
 @app.route('/')
 def home_default(): 
@@ -337,40 +290,95 @@ def process_action():
     source_lang = request.form.get('sourceLang')
     target_lang = request.form.get('targetLang')
     action_type = request.form.get('actionType')
+    filename = "static/status/current.mp4"  # Set the filename for MongoDB use
 
-    transcript_text, translation_text = "", ""
+    # Always start with transcription
+    segments = perform_transcription(filename, source_lang)
+    formatted_transcript = format_segments_to_text(segments)
 
     if action_type == 'transcribe':
-        transcript_text = perform_transcription('static/status/current.mp4', source_lang)
-    elif action_type == 'translate':
-        transcript_text = perform_transcription('static/status/current.mp4', source_lang)
-        translation_text = perform_translation(transcript_text, source_lang, target_lang)
+        # Now uses the updated perform_translation
+        translated_segments = perform_translation(segments, filename, source_lang, target_lang)
+        formatted_translation = format_segments_to_text([
+            {"start": seg["start"], "end": seg["end"], "text": seg["translated_text"]}
+            for seg in translated_segments
+        ])
 
-    return jsonify({
-        'transcript': transcript_text,
-        'translation': translation_text
-    })
+        return jsonify({
+            'transcript': formatted_transcript,
+            'translation': formatted_translation
+        })
+    else:
+        return jsonify({
+            'transcript': formatted_transcript,
+            'translation': ''
+        })
+
+
+
+def format_segments_to_text(segments):
+    """Format segments into a readable text with timestamps"""
+    formatted_text = ""
+    for segment in segments:
+        formatted_text += f"[{segment['start']:.2f}s -> {segment['end']:.2f}s] {segment['text']}\n"
+    return formatted_text
     
 @app.route('/save_transcript', methods=['POST'])
 def save_transcript():
+    data = request.get_json()
+    transcript = data.get("transcript")
+    video_name = data.get("video_name")
+    source_lang = data.get("source_lang")
+    target_lang = data.get("target_lang")
+
+    if not transcript:
+        return jsonify({"status": "error", "message": "Transcript is empty."})
+
+    # Example: Save to MongoDB (adapt as needed)
+    mongo.db.transcripts.insert_one({
+        "video_name": video_name,
+        "transcript": transcript,
+        "source_lang": source_lang,
+        "target_lang": target_lang,
+        "timestamp": datetime.now()
+    })
+
+    return jsonify({"status": "success", "message": "Transcript saved successfully!"})
+
+@app.route('/perform_transcribe', methods=['POST'])
+def perform_transcribe():
     try:
-        data = request.get_json()
-        transcript = data.get('transcript', 'transcript not saved by user')
-        video_name = data.get('video_name')
-        username = data.get('username')
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        transcript_collection.insert_one({
-            "username": username,
-            "video_name": video_name,
-            "transcript": transcript,
-            "timestamp": timestamp
+        # Get the source language from the form
+        source_lang = request.form.get('sourceLang', 'en')
+        
+        # Get the video path
+        video_path = os.path.join('static', 'status', 'current.mp4')
+        
+        # Perform transcription
+        segments = perform_transcription(video_path, source_lang)
+        
+        # Format the transcript for display
+        formatted_transcript = ""
+        for segment in segments:
+            formatted_transcript += f"[{segment['start']:.2f}s -> {segment['end']:.2f}s] {segment['text']}\n"
+        
+        # Return both the formatted transcript and the raw segments
+        return jsonify({
+            "transcript": formatted_transcript,
+            "segments": segments
         })
-
-        return jsonify({"status": "success", "message": "Transcript saved successfully!"})
     except Exception as e:
-        print(f"Error in /save_transcript: {e}")
-        return jsonify({"status": "error", "message": "Failed to save transcript."})
+        app.logger.error(f"Error in /perform_transcribe: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/progress')
+def progress():
+    def generate():
+        for i in range(1, 101, 10):
+            yield f"data: Transcribing... {i}%\n\n"
+            time.sleep(1)
+        yield "data: ✅ Transcription completed!\n\n"
+    return Response(generate(), mimetype='text/event-stream')
 
 if __name__ == "__main__":
     app.run(debug=True)

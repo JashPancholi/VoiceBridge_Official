@@ -32,6 +32,7 @@ def transcribe_video(input_mp4="static/status/current.mp4", output_mp3="static/s
         return None
     
 def perform_transcription(mp4_path, lang):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     audio_folder = os.path.join("static", "audio")
     os.makedirs(audio_folder, exist_ok=True)
 
@@ -40,6 +41,10 @@ def perform_transcription(mp4_path, lang):
     video.audio.write_audiofile(mp3_path)
     video.close()
 
-    model = whisper.load_model("base")
-    result = model.transcribe(mp3_path, language=lang)
-    return result['text']
+    model = whisper.load_model("large-v3-turbo").to(device)
+    if(lang=='nan'):
+        result = model.transcribe(mp3_path, language=lang)
+    else:
+        result = model.transcribe(mp3_path, language=lang)
+
+    return result["segments"]

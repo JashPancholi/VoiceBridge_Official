@@ -50,16 +50,20 @@
         <h2 style="text-align: center;">Orignal Transcript Output</h2>
         <div id="text_bg" class="transcript-container">
             <pre id="transcriptOutput">{{transcript_text if transcript_text else 'No transcription yet.' }}</pre>
-            <button id="saveTranscriptBtn" class="save-btn" disabled>💾 Save Transcript</button>
-        </div>   
+            <button id="saveTranscriptBtn" class="save-btn" onclick="saveTranscript()" disabled>💾 Save Transcript</button>
+        </div>
+
+        <div id="text_bg" class="translate-container">
+            <h2 style="text-align: center;">Translated Transcript Output</h2>
+            <pre id="translationOutput">{{translation_text if translation_text else 'No translation yet.' }}</pre>
+        </div>     
         <div id="successContainer"></div>
         <div id="errorContainer"></div> 
     </div>
     
 
     <div id="translateTab" class="tab-content">
-        <h2 style="text-align: center;">Translation Output</h2>
-        <pre id="translationOutput">{{translation_text if translation_text else 'No translation yet.' }}</pre>
+        <h2 style="text-align: center;">Translated video Output</h2>
     </div>
 
 <!-- Modal for language selection -->
