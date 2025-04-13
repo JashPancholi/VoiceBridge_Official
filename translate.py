@@ -1,17 +1,14 @@
 import torch
 from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer
-from datetime import datetime
-from pymongo import MongoClient
-import os
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def perform_translation(segments, filename, source_lang="en", target_lang="hi"):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def perform_translation(segments, source_lang="en", target_lang="hi"):
 
     # Load M2M100
     model_name = "facebook/m2m100_1.2B"
     tokenizer = M2M100Tokenizer.from_pretrained(model_name)
     model = M2M100ForConditionalGeneration.from_pretrained(model_name).to(device)
-    tokenizer.src_lang = source_lang
+    print(f"Using device: {device}")
 
     translated_segments = []
     for i in range(0, len(segments), 4):
@@ -20,6 +17,8 @@ def perform_translation(segments, filename, source_lang="en", target_lang="hi"):
             group_segments.append(f" *** {segments[j]['text'].strip()}")
 
         group_string = "".join(group_segments)
+
+        tokenizer.src_lang = source_lang
         inputs = tokenizer(group_string, return_tensors="pt", truncation=True, max_length=512).to(device)
         with torch.no_grad():
             translated_tokens = model.generate(
@@ -34,27 +33,39 @@ def perform_translation(segments, filename, source_lang="en", target_lang="hi"):
             translated_segments.append({
                 "start": segments[j]["start"],
                 "end": segments[j]["end"],
-                "original_text": segments[j]["text"],
-                "translated_text": translated_sentences[idx] if idx < len(translated_sentences) else ""
+                "text": translated_sentences[idx] if idx < len(translated_sentences) else ""
             })
+            
+    print("translation done")
 
-    # Store in MongoDB
-    try:
-        client = MongoClient("mongodb://localhost:27017/")  # update URI as needed
-        db = client["YourDBName"]
-        collection = db["TranslatedResults"]
+    cleaned_translated_segments = clean_timestamps(translated_segments)  
+    print("cleaning")
 
-        document = {
-            "filename": os.path.basename(filename),
-            "source_language": source_lang,
-            "target_language": target_lang,
-            "datetime": datetime.now(),
-            "translated_segments": translated_segments
-        }
+    return cleaned_translated_segments
 
-        collection.insert_one(document)
-        print(f"Translation and DB insert successful for {filename}")
-    except Exception as e:
-        print("Error saving to MongoDB:", e)
 
-    return translated_segments
+def clean_timestamps(segments):
+    cleaned_segments = []  # List to store the cleaned segments
+    previous_segment = None  # To keep track of the last non-empty segment
+
+    for segment in segments:
+        text = segment["text"].strip()  # Strip whitespace to check if the text is empty
+        start_time = segment["start"]
+        end_time = segment["end"]
+
+        if text:  # If the segment has non-empty text
+            if previous_segment is not None:
+                # If there was a previous non-empty segment, finalize it
+                cleaned_segments.append(previous_segment)
+            # Start a new segment
+            previous_segment = {"start": start_time, "end": end_time, "text": text}
+        else:
+            # If the segment is empty, extend the previous segment's end time
+            if previous_segment is not None:
+                previous_segment["end"] = end_time
+
+    # Append the last non-empty segment if it exists
+    if previous_segment is not None:
+        cleaned_segments.append(previous_segment)
+
+    return cleaned_segments

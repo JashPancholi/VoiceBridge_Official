@@ -1,3 +1,5 @@
+let activeOuterButton = null;
+
 // Function to switch between tabs (transcript and translation)
 function showTab(tabId) {
     const tabs = document.querySelectorAll('.tab-content');
@@ -15,12 +17,10 @@ document.getElementById('actionForm').onsubmit = async function(e) {
     e.preventDefault();
     closeModal();
     startLoadingBar();
-    startProgressUpdates();
 
     const formData = new FormData(this);
     const actionType = formData.get('actionType');
-    
-    // Set to transcribe_and_translate for automatic translation
+
     if (actionType === 'transcribe') {
         formData.set('actionType', 'transcribe');
     }
@@ -42,8 +42,6 @@ document.getElementById('actionForm').onsubmit = async function(e) {
         // Update UI elements based on results
         if (data.transcript) {
             showSuccess("📝 Transcription completed successfully!");
-            showSuccess("🌐 Translated Transcript completed successfully!");
-            document.getElementById('saveTranscriptBtn').disabled = false;
             updateButtonStatus('transcriptBtn', true);
         }
         
@@ -55,6 +53,12 @@ document.getElementById('actionForm').onsubmit = async function(e) {
         completeLoadingBar();
         console.error("Error:", err);
         showError("Something went wrong. Please check your input.");
+    }finally {
+        completeLoadingBar();
+        if (activeOuterButton) {
+            activeOuterButton.disabled = false;
+            activeOuterButton = null;
+        }
     }
 };
 
@@ -109,7 +113,18 @@ function openModal(action) {
     modal.style.display = "flex";
     modal.style.alignItems = "center";
     modal.style.justifyContent = "center";
+
+    // grab and disable the clicked outer button
+    const clickedButton = event?.target;
+    if (clickedButton && clickedButton.tagName === 'BUTTON') {
+        clickedButton.disabled = true;
+        activeOuterButton = clickedButton;
+    }
+
     document.getElementById('actionType').value = action;
+
+    const voiceOption = document.getElementById('VoiceOption');
+    if (voiceOption) voiceOption.style.display = 'none';
     
     if (action === 'transcribe') {
         const transcriptBtn = document.getElementById('transcriptBtn');
@@ -121,6 +136,7 @@ function openModal(action) {
         translateBtn.classList.add('translate-pending');
         translateBtn.classList.remove('translate-done');
         translateBtn.title = 'Translation in progress...';
+        if (voiceOption) voiceOption.style.display = 'block';
     }
 }
 
@@ -147,56 +163,39 @@ function completeLoadingBar() {
     }, 1000);
 }
 
-// Save transcript to database
-async function saveTranscript() {
-    // Get the transcript text from the element
-    const transcript = document.getElementById('transcriptOutput').textContent.trim();
-    const videoName = "current.mp4";
-    
-    // Get language values
-    const sourceLang = document.getElementById('sourceLang')?.value || 'en';
-    const targetLang = document.getElementById('targetLang')?.value || 'hi';
-    
-    if (!transcript || transcript === 'No transcription yet.') {
-        showError("Transcript is empty. Please transcribe the video first.");
+
+
+
+function uploadReplacedVideo(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.mp4')) {
+        showError("❌ Only .mp4 files are allowed.");
         return;
     }
-    
-    try {
-        const response = await fetch('/save_transcript', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                transcript: transcript,
-                video_name: videoName,
-                source_lang: sourceLang,
-                target_lang: targetLang
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.status === "success") {
-            showSuccess(data.message || "✅ Transcript saved successfully!");
-        } else {
-            showError(data.message || "❌ Failed to save transcript.");
-        }
-    } catch (error) {
-        console.error("Error saving transcript:", error);
-        showError("🚫 Error occurred while saving transcript.");
-    }
-}
 
-function startProgressUpdates() {
-    const eventSource = new EventSource('/progress');
-    eventSource.onmessage = function(event) {
-        showInfo(event.data);
-        if (event.data.includes("✅")) {
-            eventSource.close(); // Close when done
+    const formData = new FormData();
+    formData.append('video', file);
+
+    fetch('/upload_video', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess("✅ Video replaced successfully!");
+            // Optionally: reload video preview
+            location.reload(); // or dynamically update the video preview
+        } else {
+            showError("❌ " + data.message);
         }
-    };
+    })
+    .catch(error => {
+        console.error('Upload failed:', error);
+        showError("❌ Upload failed.");
+    });
 }
 
 // Initialize video source when page loads

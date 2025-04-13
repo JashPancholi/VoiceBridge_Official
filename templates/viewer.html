@@ -30,27 +30,29 @@
             </li>
         </ul>
     </nav>
-
+    <input type="file" id="replaceVideoInput" accept="video/mp4" style="display: none;" onchange="uploadReplacedVideo(this)">
     <div class="tab-buttons">
         <button onclick="showTab('videoTab')">🎥 Video</button>
         <button id="transcriptBtn" onclick="showTab('transcriptTab')">📝 Transcript</button>
-        <button id="translateBtn" onclick="showTab('translateTab')">🌐 Translate</button>
+        <button id="translateBtn" onclick="showTab('translateTab')">🌐 Translation</button>
     </div>
+    
     <div id="successContainer"></div>
+
     <div id="videoTab" class="tab-content active">
         <h2>Video Preview</h2>
         <video id="videoPlayer" width="720" controls></video>
         <div class="action-buttons">
-                <button type="button" onclick="openModal('transcribe')">Transcribe</button>
-                <button type="button" onclick="openModal('translate')">Translate</button>
-        </div>
+                <button type="button" onclick="openModal('transcribe',event)">Transcribe Video</button>
+                <button type="button" onclick="openModal('translate',event)">Translate Video (Video output) </button>
+                <button type="button" onclick="document.getElementById('replaceVideoInput').click()">Replace Video</button>
+            </div>
     </div>
 
     <div id="transcriptTab" class="tab-content">
         <h2 style="text-align: center;">Orignal Transcript Output</h2>
         <div id="text_bg" class="transcript-container">
             <pre id="transcriptOutput">{{transcript_text if transcript_text else 'No transcription yet.' }}</pre>
-            <button id="saveTranscriptBtn" class="save-btn" onclick="saveTranscript()" disabled>💾 Save Transcript</button>
         </div>
 
         <div id="text_bg" class="translate-container">
@@ -63,7 +65,15 @@
     
 
     <div id="translateTab" class="tab-content">
-        <h2 style="text-align: center;">Translated video Output</h2>
+        <h2 style="text-align: center;">Translated Video Output</h2>
+        {% if translated_video_exists %}
+            <video id="videoPlayer" width="720" controls>
+                <source src="{{ url_for('static', filename='completed/translated_video.mp4') }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        {% else %}
+            <p style="text-align: center;">No translated video available.</p>
+        {% endif %}
     </div>
 
 <!-- Modal for language selection -->
@@ -73,7 +83,7 @@
       <form id="actionForm">
         <label for="sourceLang">Source Language:</label>
         <select id="sourceLang" name="sourceLang" required>
-            <option value="en">English</option>
+            <option value="en">Default [-English-]</option>
             <option value="hi">Hindi</option>
             <option value="fr">French</option>
             <option value="es">Spanish</option>
@@ -87,6 +97,7 @@
       
         <label for="targetLang">Target Language:</label>
         <select id="targetLang" name="targetLang">
+            <option value="en">Default [-English-]</option>
             <option value="en">English</option>
             <option value="hi">Hindi</option>
             <option value="fr">French</option>
@@ -99,6 +110,13 @@
             <option value="pt">Portuguese</option>
         </select>
       
+        <div id="VoiceOption" style="display: none; margin-top: 10px;">
+            <label for="Voice">Choose Voice:</label>
+            <select id="Voice" name="Voice">
+            <option value="Luis Moray">Default [-Luis Moray-]</option>
+            <option value="Luis Moray">Luis Moray</option>
+            </select>
+        </div>
         <input type="hidden" id="actionType" name="actionType">
         <button type="submit">Submit</button>
       </form>
