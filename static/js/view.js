@@ -15,6 +15,10 @@ function closeModal() {
 // Handle form submission for transcription/translation
 document.getElementById('actionForm').onsubmit = async function(e) {
     e.preventDefault();
+    const actionTranscribeBtn = document.getElementById('actionTranscribeBtn');
+    const actionTranslateBtn = document.getElementById('actionTranslateBtn');
+    if (actionTranscribeBtn) actionTranscribeBtn.disabled = true;
+    if (actionTranslateBtn) actionTranslateBtn.disabled = true;
     closeModal();
     startLoadingBar();
 
@@ -29,36 +33,44 @@ document.getElementById('actionForm').onsubmit = async function(e) {
         const response = await fetch('/process', {
             method: 'POST',
             body: formData
-        });
-        
+        });  
+
         const data = await response.json();
-        
+        saveTranscriptData(data.transcript, data.translation);
+
         // Update UI with results
         document.getElementById('transcriptOutput').textContent = data.transcript || "";
         document.getElementById('translationOutput').textContent = data.translation || "";
         
-        completeLoadingBar();
-        
-        // Update UI elements based on results
+        completeLoadingBar(); // remove cancel button once complete
+
         if (data.transcript) {
             showSuccess("📝 Transcription completed successfully!");
             updateButtonStatus('transcriptBtn', true);
         }
-        
+
         if (data.translation) {
             showSuccess("🌐 Translation completed successfully!");
             updateButtonStatus('translateBtn', true);
         }
+
+        if (actionType === 'translate') {
+            setTimeout(() => location.reload(), 3000);
+        }
+
     } catch (err) {
         completeLoadingBar();
         console.error("Error:", err);
         showError("Something went wrong. Please check your input.");
-    }finally {
+    } finally {
         completeLoadingBar();
-        if (activeOuterButton) {
-            activeOuterButton.disabled = false;
-            activeOuterButton = null;
-        }
+        // Re-enable both action buttons
+        const actionTranscribeBtn = document.getElementById('actionTranscribeBtn');
+        const actionTranslateBtn = document.getElementById('actionTranslateBtn');
+        if (actionTranscribeBtn) actionTranscribeBtn.disabled = false;
+        if (actionTranslateBtn) actionTranslateBtn.disabled = false;
+
+        activeOuterButton = null;
     }
 };
 
@@ -114,18 +126,17 @@ function openModal(action) {
     modal.style.alignItems = "center";
     modal.style.justifyContent = "center";
 
-    // grab and disable the clicked outer button
-    const clickedButton = event?.target;
-    if (clickedButton && clickedButton.tagName === 'BUTTON') {
-        clickedButton.disabled = true;
-        activeOuterButton = clickedButton;
-    }
 
     document.getElementById('actionType').value = action;
 
     const voiceOption = document.getElementById('VoiceOption');
     if (voiceOption) voiceOption.style.display = 'none';
     
+    if (action === 'translate') {
+        // Set a flag to indicate translation is in progress
+        sessionStorage .setItem('translation_in_progress', 'true');
+    }
+
     if (action === 'transcribe') {
         const transcriptBtn = document.getElementById('transcriptBtn');
         transcriptBtn.classList.add('transcript-pending');
@@ -175,8 +186,13 @@ function uploadReplacedVideo(input) {
         return;
     }
 
+      // Clear any existing transcript/translation data
+    sessionStorage .removeItem('transcript_text');
+    sessionStorage .removeItem('translation_text');
+
     const formData = new FormData();
     formData.append('video', file);
+    formData.append('replaced', 'true');  // This tells the server it’s a replacement upload
 
     fetch('/upload_video', {
         method: 'POST',
@@ -198,10 +214,37 @@ function uploadReplacedVideo(input) {
     });
 }
 
-// Initialize video source when page loads
 window.onload = function() {
     const videoPlayer = document.getElementById('videoPlayer');
     if (videoPlayer) {
-        videoPlayer.src = '/static/status/current.mp4';
+        // Added a timestamp to force refresh
+        videoPlayer.src = '/static/status/current.mp4?t=' + new Date().getTime();
+    }
+    
+    // Check sessionStorage  for saved transcript/translation
+    const savedTranscript = sessionStorage .getItem('transcript_text');
+    const savedTranslation = sessionStorage .getItem('translation_text');
+    
+    const transcriptOutput = document.getElementById('transcriptOutput');
+    const translationOutput = document.getElementById('translationOutput');
+    
+    // Only set default text if no saved data exists
+    if (transcriptOutput) {
+        transcriptOutput.textContent = savedTranscript || 'No transcription yet.';
+    }
+    
+    if (translationOutput) {
+        translationOutput.textContent = savedTranslation || 'No translation yet.';
     }
 };
+
+function saveTranscriptData(transcript, translation) {
+    if (transcript) {
+        sessionStorage .setItem('transcript_text', transcript);
+        sessionStorage .setItem('translation_text', translation);
+    }
+    if (translation) {
+        sessionStorage .setItem('translation_text', translation);
+        sessionStorage .setItem('transcript_text', transcript);
+    }
+}

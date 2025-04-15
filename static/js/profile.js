@@ -43,17 +43,22 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
+                if (videos.length === 0) {
+                    const emptyMsg = document.createElement('div');
+                    emptyMsg.className = 'empty-history-message';
+                    emptyMsg.innerHTML = `<span>🕳️</span>
+                        <p>Your history is empty.<br>Start uploading videos to see them here!</p>`;
+                    historyList.appendChild(emptyMsg);
+                    return;
+                }
+
                 videos.forEach(video => {
                     const item = document.createElement('div');
                     item.className = 'history-item';
                     
                     // Add thumbnail image to the history section
                     const thumbnail = document.createElement('img');
-                    if (video.thumbnail_url) {
-                        thumbnail.src = video.thumbnail_url;
-                    } else {
-                        thumbnail.src = '/static/placeholder-thumbnail.jpg';
-                    }
+                    thumbnail.src = '/static/thmb/default_thumbnail.png'; 
                     thumbnail.alt = 'Video Thumbnail';
                     thumbnail.className = 'history-thumbnail';
                     item.appendChild(thumbnail);
@@ -63,6 +68,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     filename.textContent = video.original_filename;
                     item.appendChild(filename);
                     
+                    // Add source and target languages to the history section
+                    const languageInfo = document.createElement('p');
+                    languageInfo.className = 'history-language-info';
+                    languageInfo.textContent = `From ${video.source_language} to ${video.target_language}`;
+                    item.appendChild(languageInfo);
+
                     // Set up the click event for opening the modal
                     item.style.cursor = 'pointer';
                     item.onclick = () => openModal(video);
@@ -139,6 +150,10 @@ function openModal(video) {
     const modalTitle = document.getElementById('modal-title');
     if (modalTitle) {
         modalTitle.textContent = video.original_filename;
+    }
+    const languageDisplay = document.getElementById('modal-language-info');
+    if (languageDisplay) {
+       languageDisplay.textContent = `Language: ${video.source_language} → ${video.target_language}`;
     }
 }
 

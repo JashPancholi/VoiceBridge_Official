@@ -10,7 +10,6 @@ import uuid,os,shutil,time,io
 from gridfs import GridFS
 from bson.objectid import ObjectId
 from PIL import Image
-from moviepy import VideoFileClip
 
 
 
@@ -21,7 +20,7 @@ app.config['UPLOAD_FOLDER'] = 'static/uploads/'  # Define the folder to store up
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}    # File type config for dp
 app.config['VIDEO_UPLOAD_FOLDER'] = 'static/upload_vids'  # Folder config for videos
 app.config['ALLOWED_VIDEO_EXTENSIONS'] = {'mp4'}    # File type config for videos
-app.config['THUMBNAIL_FOLDER'] = 'static/Thumbnail/'
+app.config['THUMBNAIL_FOLDER'] = 'static/thumbnails/'
 mongo = PyMongo(app)
 
 # Collection reference
@@ -268,12 +267,15 @@ def upload_video():
         filepath = os.path.join(app.config['VIDEO_UPLOAD_FOLDER'], filename)
         video.save(filepath)
 
+        replaced_flag = request.form.get('replaced', 'false').lower() == 'true'
+
         mongo.db.videos.insert_one({
             "username": session['username'],
             "filename": filename,
             "original_filename": original_filename,
             "filepath": filepath,
-            "upload_time": datetime.now()
+            "upload_time": datetime.now(),
+            "replaced": replaced_flag
         })
 
         return jsonify({"success": True, "filename": filename, "original_filename": original_filename})
@@ -315,7 +317,7 @@ def process_action():
     voice_choice = request.form.get("Voice")  # Default to John
 
     filename = "static/status/current.mp4"  # Set the filename for MongoDB use
-
+    original_filename = request.form.get("original_filename", "unknown.mp4") 
     # Always start with transcription
     segments, mp3_path = perform_transcription(filename, source_lang)
     formatted_transcript = format_segments_to_text(segments)
@@ -336,6 +338,8 @@ def process_action():
             username = session.get("username")
             metadata = {
                 "username": username,
+                "filename": os.path.basename(filename),
+                "original_filename": original_filename,
                 "source_language": source_lang,
                 "target_language": target_lang,
                 "datetime": datetime.now()
@@ -344,9 +348,18 @@ def process_action():
             video_id = save_translated_video_to_db(translated_video_path, metadata)
 
             if video_id:
+                # Lookup the original video entry to fetch the original filename
+                video_entry = mongo.db.video.find_one({
+                    "username": session["username"],
+                    "filename": {"$regex": ".*current\\.mp4$"}  # Match the UUID-prefixed filename ending in current.mp4
+                })
+
+                original_filename = video_entry.get("original_filename", "unknown.mp4") if video_entry else "unknown.mp4"
+
                 document = {
                     "username": username,
                     "filename": os.path.basename(filename),
+                    "original_filename": original_filename, 
                     "source_language": source_lang,
                     "target_language": target_lang,
                     "datetime": datetime.now(),
@@ -355,6 +368,7 @@ def process_action():
                     "translated_video": video_id
                 }
                 translation_collection.insert_one(document)
+
                 print(f"Translation and DB insert successful for {filename}")
             else:
                 print("Failed to save translated video to DB.")
@@ -382,7 +396,9 @@ def process_action():
       
     return jsonify({
         'transcript': formatted_transcript,
-        'translation': formatted_translation
+        'translation': formatted_translation,
+        'refresh': True  # Add this flag
+
     })
     
 def format_segments_to_text(segments):
@@ -399,18 +415,6 @@ def save_translated_video_to_db(video_path, metadata):
             print(f"Error: Video file not found at {video_path}")
             return None
             
-        # Generate thumbnail
-        thumbnail_path = os.path.join(app.config['THUMBNAIL_FOLDER'], f"{metadata['username']}_{int(time.time())}.jpg")
-        
-        # Create thumbnail directory if it doesn't exist
-        os.makedirs(os.path.dirname(thumbnail_path), exist_ok=True)
-        
-        # Generate thumbnail with better error handling
-        thumbnail_result = generate_thumbnail(video_path, thumbnail_path)
-        if not thumbnail_result:
-            print(f"Warning: Failed to generate thumbnail for {video_path}")
-            # Continue without thumbnail
-        
         # Open and save video file to GridFS
         with open(video_path, 'rb') as video_file:
             video_id = fs.put(
@@ -419,24 +423,7 @@ def save_translated_video_to_db(video_path, metadata):
                 content_type='video/mp4',
                 metadata=metadata
             )
-            
-        # If thumbnail was generated successfully, save it too
-        if thumbnail_result and os.path.exists(thumbnail_path):
-            try:
-                with open(thumbnail_path, 'rb') as thumbnail_file:
-                    thumbnail_id = fs.put(
-                        thumbnail_file,
-                        filename=os.path.basename(thumbnail_path),
-                        content_type='image/jpeg',
-                        metadata={'video_id': video_id}
-                    )
-                    
-                # Update metadata with thumbnail_id
-                mongo.db.fs.files.update_one({'_id': video_id}, {'$set': {'metadata.thumbnail_id': thumbnail_id}})
-            except Exception as thumb_error:
-                print(f"Error saving thumbnail to GridFS: {thumb_error}")
-                # Continue without thumbnail
-                
+                   
         return video_id
     except Exception as e:
         print(f"Error saving video to GridFS: {e}")
@@ -445,39 +432,102 @@ def save_translated_video_to_db(video_path, metadata):
         return None
 
 
+# @app.route('/get_video_history', methods=['GET'])
+# def get_video_history():
+#     username = session.get("username")
+#     if not username:
+#         return jsonify({"error": "User not logged in"}), 401
+    
+#     # Get the latest video uploaded by this user
+#     latest_video = mongo.db.videos.find_one(
+#         {"username": username},
+#         sort=[("upload_time", -1)]  # Sort by upload time in descending order
+#     )
+    
+#     # Extract the original_filename if a video was found
+#     latest_original_filename = None
+#     if latest_video:
+#         latest_original_filename = latest_video.get("original_filename", "unknown.mp4")
+#         # You can store this in session for later use
+#         session['latest_original_filename'] = latest_original_filename
+    
+
+#     # Fetch the user's video history and sort by datetime (oldest to newest)
+#     history = list(translation_collection.find({"username": username}).sort("datetime", 1))
+    
+#     # Prepare the response data
+#     videos = []
+#     for entry in history:
+#         original_filename = entry.get("original_filename") or entry.get("filename", "unknown.mp4")
+#         translated_video_id = str(entry.get("translated_video")) if entry.get("translated_video") else None
+#         datetime_str = entry.get("datetime").strftime('%Y-%m-%d %H:%M:%S') if entry.get("datetime") else "Unknown"
+#          # Use an absolute path for the thumbnail
+#         thumbnail_path = url_for('static', filename='*/static/thumbnails/thumbnail_default.png', _external=True)
+        
+#         video_data = {
+#             "filename": entry.get("filename", "unknown.mp4"),
+#             "original_filename": latest_original_filename,
+#             "source_language": entry.get("source_language", ""),
+#             "target_language": entry.get("target_language", ""),
+#             "datetime": datetime_str,
+#             "translated_text": entry.get("translated_text", ""),
+#             "original_text": entry.get("original_text", ""),
+#             "translated_video_id": translated_video_id,
+#             "thumbnail_url": thumbnail_path
+#         }
+        
+#         videos.append(video_data)
+    
+#     return jsonify(videos)
+
+
+from datetime import timedelta
+
 @app.route('/get_video_history', methods=['GET'])
 def get_video_history():
     username = session.get("username")
     if not username:
         return jsonify({"error": "User not logged in"}), 401
 
-    # Fetch the user's video history
-    history = list(translation_collection.find({"username": username}))
-    
-    # Prepare the response data
+    history = list(translation_collection.find({"username": username}).sort("datetime", 1))
     videos = []
+
     for entry in history:
-        # Fetch the original filename from the videos collection
-        video_info = mongo.db.videos.find_one({"filename": entry["filename"]})
-        original_filename = video_info["original_filename"] if video_info else entry["filename"]
-        
-        # Convert ObjectId to string for JSON serialization
+        entry_time = entry.get("datetime")
+        original_filename = "Not_Saved.mp4"
+
+        if entry_time:
+            # Try to find a matching video using exact datetime match
+            matching_video = mongo.db.videos.find_one({
+                "username": username,
+                "upload_time": {
+                    "$gte": entry_time - timedelta(seconds=180),
+                    "$lte": entry_time + timedelta(seconds=180)
+                }
+            })
+
+            if matching_video:
+                original_filename = matching_video.get("original_filename", "original_filename")
+
         translated_video_id = str(entry.get("translated_video")) if entry.get("translated_video") else None
-        
+        datetime_str = entry_time.strftime('%Y-%m-%d %H:%M:%S') if entry_time else "Unknown"
+
+        thumbnail_path = url_for('static', filename='thmb/default_thumbnail.png')
+
         video_data = {
-            "filename": entry["filename"],
+            "filename": entry.get("filename", "unknown.mp4"),
             "original_filename": original_filename,
-            "source_language": entry["source_language"],
-            "target_language": entry["target_language"],
-            "datetime": entry["datetime"],
-            "translated_text": entry["translated_text"],
-            "original_text": entry["original_text"],
+            "source_language": entry.get("source_language", ""),
+            "target_language": entry.get("target_language", ""),
+            "datetime": datetime_str,
+            "translated_text": entry.get("translated_text", ""),
+            "original_text": entry.get("original_text", ""),
             "translated_video_id": translated_video_id,
-            "thumbnail_url": url_for('get_thumbnail', video_id=translated_video_id, _external=True) if translated_video_id else None
+            "thumbnail_url": thumbnail_path
         }
-        
+
         videos.append(video_data)
-    
+
     return jsonify(videos)
 
 
@@ -524,67 +574,45 @@ def get_video(video_id):
         print(f"Error retrieving video: {e}")
         return "Video not found", 404
 
-@app.route('/thumbnail/<video_id>')
+@app.route('/thumbnail/')
 def get_thumbnail(video_id):
     try:
-        # Find the video document
-        video_file = mongo.db.fs.files.find_one({'_id': ObjectId(video_id)})
-        if not video_file:
-            return "Video not found", 404
-            
-        # Get the thumbnail_id from the video metadata
-        thumbnail_id = video_file.get('metadata', {}).get('thumbnail_id')
-        if not thumbnail_id:
-            return "Thumbnail not found", 404
-            
-        # Retrieve the thumbnail file
-        thumbnail = fs.get(ObjectId(thumbnail_id))
-        
-        # Serve the thumbnail
         return send_file(
-            io.BytesIO(thumbnail.read()),
-            mimetype='image/jpeg',
-            as_attachment=False,
-            download_name=f"{video_id}_thumbnail.jpg"
+            os.path.join('static', 'thumbnails', 'thumbnail_default.png'),
+            mimetype='image/png',
+            as_attachment=False
         )
     except Exception as e:
-        print(f"Error retrieving thumbnail: {e}")
+        print(f"Error returning default thumbnail: {e}")
         return "Thumbnail not found", 404
 
-
-def generate_thumbnail(video_path, output_path, time=2.0):
-    """
-    Generate a thumbnail from a video file without using cv2.
+@app.route('/get_latest_original_filename')
+def get_latest_original_filename_route():
+    if 'username' not in session:
+        return jsonify({"success": False, "message": "Not logged in."}), 403
     
-    :param video_path: Path to the video file
-    :param output_path: Path to save the thumbnail
-    :param time: Time in seconds at which to take the thumbnail (default: 2 seconds)
-    :return: Path to the generated thumbnail
+    latest_video = mongo.db.videos.find_one(
+        {"username": session['username']},
+        sort=[("upload_time", -1)]
+    )
+    
+    if latest_video:
+        original_filename = latest_video.get("original_filename", "unknown.mp4")
+        return jsonify({"success": True, "original_filename": original_filename})
+    
+    return jsonify({"success": False, "message": "No videos found."}), 404
+
+def get_latest_video_metadata(username):
     """
-    try:
-        # Load the video file
-        clip = VideoFileClip(video_path)
-        
-        # Get a frame at the specified time
-        frame = clip.get_frame(time)
-        
-        # Convert the frame to a PIL Image
-        image = Image.fromarray(frame)
-        
-        # Resize the image while maintaining aspect ratio
-        max_size = (320, 180)
-        image.thumbnail(max_size, Image.LANCZOS)
-        
-        # Save the thumbnail
-        image.save(output_path, "JPEG", quality=85)
-        
-        # Close the video clip to free up resources
-        clip.close()
-        
-        return output_path
-    except Exception as e:
-        print(f"Error generating thumbnail: {e}")
-        return None
+    Retrieves metadata for the latest video uploaded by a specific user
+    Returns a dictionary with video metadata or None if no video found
+    """
+    latest_video = mongo.db.videos.find_one(
+        {"username": username},
+        sort=[("upload_time", -1)]
+    )
+    
+    return latest_video
     
 if __name__ == "__main__":
     app.run(debug=True)

@@ -150,7 +150,12 @@ def adjust_timestamps_with_vad(cleaned_segments, vad_timestamps, max_gap=0.5):
             })
         else:
             print(f"No VAD overlap found for segment [{seg_start:.2f}s -> {seg_end:.2f}s]: '{seg_text}'")
+        
+    formatted_text = ""
+    for segment in adjusted_segments:
+        formatted_text += f"[{segment['start']:.2f}s -> {segment['end']:.2f}s] {segment['text']}\n"
 
+    print(formatted_text)
     return adjusted_segments
 
 

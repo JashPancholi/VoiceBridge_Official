@@ -41,6 +41,12 @@ def perform_translation(segments, source_lang="en", target_lang="hi"):
     cleaned_translated_segments = clean_timestamps(translated_segments)  
     print("cleaning")
 
+    formatted_text = ""
+    for segment in cleaned_translated_segments:
+        formatted_text += f"[{segment['start']:.2f}s -> {segment['end']:.2f}s] {segment['text']}\n"
+
+    print(formatted_text)
+
     return cleaned_translated_segments
 
 

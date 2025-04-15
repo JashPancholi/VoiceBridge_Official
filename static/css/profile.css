@@ -192,3 +192,64 @@
 }
 
 
+.history-language-info {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: -5px;
+    margin-bottom: 8px;
+}
+
+.modal-language {
+    font-size: 1em;
+    color: #444;
+    margin-bottom: 10px;
+}
+
+
+.cancelButton {
+    margin-top: 10px;
+    background-color: #ff6666;
+    color: white;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.empty-history-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+    background: linear-gradient(135deg, #f8fafc 60%, #e0e7ef 100%);
+    border: 2px dashed #b6c2d1;
+    border-radius: 18px;
+    color: #4b5563;
+    font-size: 1.2rem;
+    margin: 32px auto;
+    max-width: 400px;
+    box-shadow: 0 2px 12px 0 rgba(80, 120, 180, 0.07);
+    transition: box-shadow 0.2s;
+  }
+  
+  .empty-history-message:hover {
+    box-shadow: 0 4px 24px 0 rgba(80, 120, 180, 0.13);
+  }
+  
+  .empty-history-message span {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+    animation: bounce 1.2s infinite alternate;
+  }
+  
+  @keyframes bounce {
+    to { transform: translateY(-8px); }
+  }
+  
+  .empty-history-message p {
+    margin: 0;
+    text-align: center;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
