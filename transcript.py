@@ -21,6 +21,10 @@ def perform_transcription(mp4_path, lang):
     else:
         result = model.transcribe(mp3_path, language=lang)
     print("transcription done.")
+    trans=format_segments_to_text(result["segments"])
+    print(trans)
+     
+
 
     model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad', model='silero_vad')
     (get_speech_timestamps, _, read_audio, _, _) = utils
@@ -202,3 +206,10 @@ def transcribe_video(input_mp4="static/status/current.mp4", output_mp3="static/s
     except Exception as e:
         print("Error during transcription:", e)
         return None
+    
+
+def format_segments_to_text(segments):
+    formatted_text = ""
+    for segment in segments:
+        formatted_text += f"[{segment['start']:.2f}s -> {segment['end']:.2f}s] {segment['text']}\n"
+    return formatted_text
