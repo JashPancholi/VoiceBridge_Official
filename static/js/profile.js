@@ -1,24 +1,32 @@
+// Wait until the DOM is fully loaded before attaching event handlers
 document.addEventListener("DOMContentLoaded", function () {
-    // Profile picture upload functionality
-    const uploadBtn = document.getElementById("upload-btn");
+    
+    // --- Profile picture upload functionality ---
+    // Get references to upload button and file input elements    const uploadBtn = document.getElementById("upload-btn");
     const fileInput = document.getElementById("file-input");
 
+    // If both upload button and file input exist, set up event listeners
     if (uploadBtn && fileInput) {
+        // When upload button is clicked, trigger the hidden file input dialog
         uploadBtn.addEventListener("click", function () {
             fileInput.click();
         });
 
+        // When a file is selected, upload the profile picture to the server
         fileInput.addEventListener("change", function () {
             const file = fileInput.files[0];
             if (file) {
                 const formData = new FormData();
                 formData.append("profile_pic", file);
+
+                // Send the selected file to the server via POST request
                 fetch("/upload-profile-pic", {
                     method: "POST",
                     body: formData,
                 })
                 .then(response => response.json())
                 .then(data => {
+                    // If upload is successful, update the profile picture on the page
                     if (data.success) {
                         document.getElementById("profile-pic").src = data.profile_pic_url;
                     } else {
@@ -37,12 +45,13 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch('/get_video_history')
             .then(response => response.json())
             .then(videos => {
+                 // If there's an error, alert the user
                 console.log('Video history data:', videos);
                 if (videos.error) {
                     alert(videos.error);
                     return;
                 }
-
+                // If history is empty, display a message
                 if (videos.length === 0) {
                     const emptyMsg = document.createElement('div');
                     emptyMsg.className = 'empty-history-message';
@@ -51,7 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     historyList.appendChild(emptyMsg);
                     return;
                 }
-
+                // Otherwise, render each video in the history list
                 videos.forEach(video => {
                     const item = document.createElement('div');
                     item.className = 'history-item';
@@ -106,6 +115,7 @@ document.addEventListener("DOMContentLoaded", function () {
         };
     }
 });
+//Open Modal for viewing history data in dept - final O/P aling with video in modal
 function openModal(video) {
     console.log('Opening modal for video:', video);
     const modal = document.getElementById('content-modal');

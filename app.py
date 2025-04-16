@@ -431,56 +431,6 @@ def save_translated_video_to_db(video_path, metadata):
         traceback.print_exc()
         return None
 
-
-# @app.route('/get_video_history', methods=['GET'])
-# def get_video_history():
-#     username = session.get("username")
-#     if not username:
-#         return jsonify({"error": "User not logged in"}), 401
-    
-#     # Get the latest video uploaded by this user
-#     latest_video = mongo.db.videos.find_one(
-#         {"username": username},
-#         sort=[("upload_time", -1)]  # Sort by upload time in descending order
-#     )
-    
-#     # Extract the original_filename if a video was found
-#     latest_original_filename = None
-#     if latest_video:
-#         latest_original_filename = latest_video.get("original_filename", "unknown.mp4")
-#         # You can store this in session for later use
-#         session['latest_original_filename'] = latest_original_filename
-    
-
-#     # Fetch the user's video history and sort by datetime (oldest to newest)
-#     history = list(translation_collection.find({"username": username}).sort("datetime", 1))
-    
-#     # Prepare the response data
-#     videos = []
-#     for entry in history:
-#         original_filename = entry.get("original_filename") or entry.get("filename", "unknown.mp4")
-#         translated_video_id = str(entry.get("translated_video")) if entry.get("translated_video") else None
-#         datetime_str = entry.get("datetime").strftime('%Y-%m-%d %H:%M:%S') if entry.get("datetime") else "Unknown"
-#          # Use an absolute path for the thumbnail
-#         thumbnail_path = url_for('static', filename='*/static/thumbnails/thumbnail_default.png', _external=True)
-        
-#         video_data = {
-#             "filename": entry.get("filename", "unknown.mp4"),
-#             "original_filename": latest_original_filename,
-#             "source_language": entry.get("source_language", ""),
-#             "target_language": entry.get("target_language", ""),
-#             "datetime": datetime_str,
-#             "translated_text": entry.get("translated_text", ""),
-#             "original_text": entry.get("original_text", ""),
-#             "translated_video_id": translated_video_id,
-#             "thumbnail_url": thumbnail_path
-#         }
-        
-#         videos.append(video_data)
-    
-#     return jsonify(videos)
-
-
 from datetime import timedelta
 
 @app.route('/get_video_history', methods=['GET'])

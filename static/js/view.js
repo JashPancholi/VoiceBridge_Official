@@ -15,13 +15,21 @@ function closeModal() {
 // Handle form submission for transcription/translation
 document.getElementById('actionForm').onsubmit = async function(e) {
     e.preventDefault();
+
+    // Disable all relevant action buttons to prevent duplicate submissions
     const actionTranscribeBtn = document.getElementById('actionTranscribeBtn');
     const actionTranslateBtn = document.getElementById('actionTranslateBtn');
     if (actionTranscribeBtn) actionTranscribeBtn.disabled = true;
     if (actionTranslateBtn) actionTranslateBtn.disabled = true;
+    const transcriptTabBtn = document.getElementById('transcriptBtn');
+    if (transcriptTabBtn) transcriptTabBtn.disabled = true;    
+    const TranslateBtn = document.getElementById('translateBtn');
+    if (TranslateBtn) TranslateBtn.disabled = true;
+
     closeModal();
     startLoadingBar();
 
+    // Prepare form data and determine action type
     const formData = new FormData(this);
     const actionType = formData.get('actionType');
 
@@ -30,12 +38,14 @@ document.getElementById('actionForm').onsubmit = async function(e) {
     }
     
     try {
+        // Send transcription/translation request to the server
         const response = await fetch('/process', {
             method: 'POST',
             body: formData
         });  
 
         const data = await response.json();
+        // Save transcript and translation data to sessionStorage
         saveTranscriptData(data.transcript, data.translation);
 
         // Update UI with results
@@ -44,6 +54,7 @@ document.getElementById('actionForm').onsubmit = async function(e) {
         
         completeLoadingBar(); // remove cancel button once complete
 
+        // Show success messages and update button status
         if (data.transcript) {
             showSuccess("📝 Transcription completed successfully!");
             updateButtonStatus('transcriptBtn', true);
@@ -69,7 +80,10 @@ document.getElementById('actionForm').onsubmit = async function(e) {
         const actionTranslateBtn = document.getElementById('actionTranslateBtn');
         if (actionTranscribeBtn) actionTranscribeBtn.disabled = false;
         if (actionTranslateBtn) actionTranslateBtn.disabled = false;
-
+        const TranslateBtn = document.getElementById('translateBtn');
+        const transcriptTabBtn = document.getElementById('transcriptBtn');
+        if (transcriptTabBtn) transcriptTabBtn.disabled = false;
+        if (TranslateBtn) TranslateBtn.disabled = false;
         activeOuterButton = null;
     }
 };
@@ -238,6 +252,7 @@ window.onload = function() {
     }
 };
 
+// Function to save transcript and translation data in sessionStorage
 function saveTranscriptData(transcript, translation) {
     if (transcript) {
         sessionStorage .setItem('transcript_text', transcript);

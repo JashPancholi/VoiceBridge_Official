@@ -1,12 +1,23 @@
-
+// Get references to DOM elements for file input, upload button, and error message display
 const fileInput = document.getElementById('fileInput');
 const uploadBtn = document.getElementById('uploadBtn');
 const errorMessage = document.getElementById('errorMessage');
 
+
+// When the upload button is clicked, trigger the hidden file input dialog
 uploadBtn.addEventListener('click', () => fileInput.click());
 
+// When a file is selected, handle the upload process
 fileInput.addEventListener('change', handleUpload);
 
+
+/**
+ * Handles the file upload process:
+ * - Validates the file type
+ * - Sends the file to the server via POST
+ * - Redirects to viewer on success
+ * - Displays error messages on failure
+ */
 async function handleUpload() {
     const file = fileInput.files[0];
 

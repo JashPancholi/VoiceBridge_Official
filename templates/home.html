@@ -24,10 +24,50 @@
 
     <section class="hero">
         <h1>Now we're speaking your language.</h1>
-        <p>With a few clicks you can speak 175 languages, in your voice, with your lips perfectly synced. This isn’t dubbing. It’s AI magic.</p>
+        <p>Upload your video, select your target language, and let our AI handle the rest. Get fast, accurate translations with perfectly synced audio—no technical skills required.</p>
         <a href="login.html" class="cta-button">Get started</a>
     </section>
-
-
+    <div class="video-tutorials">
+        <h2>How It Works</h2>
+    
+        <div class="video-container">
+            <video autoplay loop muted playsinline>
+                <source src="{{ url_for('static', filename='steps/step1.mp4') }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <p>Sign up or log in with ease</p>
+        </div>
+    
+        <div class="video-container">
+            <video autoplay loop muted playsinline>
+                <source src="{{ url_for('static', filename='steps/step2.mp4') }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <p>Upload your video in seconds</p>
+        </div>
+    
+        <div class="video-container">
+            <video autoplay loop muted playsinline>
+                <source src="{{ url_for('static', filename='steps/step3.mp4') }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <p>Pick your preferred language</p>
+        </div>
+    
+        <div class="video-container">
+            <video autoplay loop muted playsinline>
+                <source src="{{ url_for('static', filename='steps/step4.mp4') }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <p>Watch as your video transforms automatically</p>
+        </div>
+    
+        <!-- Step 4.1: Image Section -->
+        <div class="image-container" id="step4-1">
+            <img src="{{ url_for('static', filename='steps/step4_1.png') }}" alt="Step 4.1 Preview" />
+            <p>See your translated video in action!</p>
+        </div>
+    </div>
+    
 </body>
 </html>
