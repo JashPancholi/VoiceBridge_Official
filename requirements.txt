@@ -4,11 +4,13 @@ torchvision
 torchaudio
 Flask
 Flask-PyMongo
+pymongo
 Werkzeug
+Pillow
 transformers
-whisper
 moviepy
 pydub
 soundfile
-math
+pyrubberband
+TTS
 git+https://github.com/openai/whisper.git
