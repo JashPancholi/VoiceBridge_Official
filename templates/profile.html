@@ -43,9 +43,46 @@
         <p>{{ user['username'] }}</p>
         <button onclick="document.getElementById('editModal').style.display='block'">Edit Details</button>
     </div>
+
+     <!-- History Section (Right) -->
+     <div class="history-card">
+        <h2>Your History</h2>
+        <div class="history-filters">
+            <button class="filter-btn active" data-filter="video">Videos</button>
+        </div>
+        <div class="history-list">
+            <!-- History items will be populated here via JavaScript -->
+        </div>
+    </div>
 </div>
 
-<!-- Edit Modal -->
+<!-- Modal for viewing content -->
+<div id="content-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2 id="modal-title"></h2>
+        
+        <video id="history-video" controls width="100%">
+            Your browser does not support the video tag.
+        </video>
+        
+        <div class="transcript-container">
+            <p id="modal-language-info" class="modal-language"></p>
+            <div class="tab-buttons">
+                <button class="tab-btn active" data-tab="original">Original Transcript</button>
+                <button class="tab-btn" data-tab="translated">Translated Transcript</button>
+            </div>
+
+            <div class="tab-content">
+                <div id="original-transcript" class="tab-pane active"></div>
+                <div id="translated-transcript" class="tab-pane"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
 <div id="editModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="document.getElementById('editModal').style.display='none'">&times;</span>
@@ -74,13 +111,6 @@
     </div>
 </div>
 
-<script>
-    // Close modal when clicking outside of it
-    window.onclick = function(event) {
-        if (event.target.className === 'modal') {
-            event.target.style.display = "none";
-        }
-    }
-</script>
+<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
 </body>
 </html>

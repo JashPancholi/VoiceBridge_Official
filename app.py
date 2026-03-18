@@ -1,60 +1,16 @@
-# from flask import Flask, render_template, request, redirect, url_for, session, flash
-# from flask_pymongo import PyMongo
-
-# app = Flask(__name__)
-# app.config["MONGO_URI"] = "mongodb://localhost:27017/VoiceBridgeData"
-# app.secret_key = "E@syP@ssw0d@key"  # Change this to a strong secret key
-# mongo = PyMongo(app)
-
-# # Collection reference
-# users = mongo.db.users 
-
-# @app.route('/')
-# def home_default(): 
-#     return render_template('home.html')
-
-# @app.route('/login.html')
-# def login():
-#     return render_template('login.html')
-
-# @app.route('/reg.html')
-# def reg():
-#     return render_template('reg.html')
-
-# @app.route('/dashboard.html')
-# def dashboard():
-#     return render_template('dashboard.html')
-
-# @app.route('/about.html')
-# def about():
-#     return render_template('about.html')
-
-# @app.route('/about-logged-in.html')
-# def aboutloggedin():
-#     return render_template('about-logged-in.html')
-
-# @app.route('/home.html')
-# def home():
-#     return render_template('home.html')
-
-# @app.route('/logout')
-# def logout():
-#     session.clear()
-#     flash("You have been logged out.", "info")
-#     return redirect(url_for('home'))
-
-# if __name__=="__main__":
-#     app.run(debug=True)
-
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect,send_file, url_for, session, flash, jsonify,Response
 from flask_pymongo import PyMongo
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-import uuid
 from datetime import datetime
-import shutil
-import os
 from transcript import perform_transcription
+from translate import perform_translation
+from transvideo import translate_video
+import uuid,os,shutil,time,io
+from gridfs import GridFS
+from bson.objectid import ObjectId
+from PIL import Image
+
 
 
 app = Flask(__name__)
@@ -64,11 +20,14 @@ app.config['UPLOAD_FOLDER'] = 'static/uploads/'  # Define the folder to store up
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}    # File type config for dp
 app.config['VIDEO_UPLOAD_FOLDER'] = 'static/upload_vids'  # Folder config for videos
 app.config['ALLOWED_VIDEO_EXTENSIONS'] = {'mp4'}    # File type config for videos
-
+app.config['THUMBNAIL_FOLDER'] = 'static/thumbnails/'
 mongo = PyMongo(app)
 
 # Collection reference
 users = mongo.db.users
+transcript_collection = mongo.db.transcripts
+translation_collection = mongo.db.TranslatedResults
+fs = GridFS(mongo.db)
 
 @app.route('/')
 def home_default(): 
@@ -82,7 +41,7 @@ def login():
 def viewer():
     if 'username' in session:
         videos = list(mongo.db.videos.find({"username": session['username']}).sort("upload_time", -1))
-
+        
         if videos:
             latest_video = videos[0]
             source = os.path.join('static', 'upload_vids', latest_video['filename'])
@@ -91,14 +50,20 @@ def viewer():
 
             os.makedirs(destination_folder, exist_ok=True)
 
-            # Only move if the current.mp4 doesn't exist or is different
             if os.path.exists(source):
-                # Remove previous current.mp4 if exists
                 if os.path.exists(destination):
                     os.remove(destination)
                 shutil.move(source, destination)
 
-        return render_template('viewer.html', videos=videos)
+        # Check if translated video exists
+        translated_video_path = os.path.join('static', 'completed', 'translated_video.mp4')
+        translated_video_exists = os.path.exists(translated_video_path)
+
+        return render_template(
+            'viewer.html',
+            videos=videos,
+            translated_video_exists=translated_video_exists
+        )
     return redirect(url_for('login'))
 
 @app.route('/reg.html')
@@ -277,7 +242,17 @@ def login_user():
 def upload_video():
     if 'username' not in session:
         return jsonify({"success": False, "message": "Not logged in."}), 403
-
+    
+     # Check if translated_video.mp4 exists and delete it if found
+    translated_video_path = 'static/completed/translated_video.mp4'
+    if os.path.exists(translated_video_path):
+        try:
+            os.remove(translated_video_path)
+            print(f"Deleted existing file: {translated_video_path}")
+        except Exception as e:
+            print(f"Error deleting file {translated_video_path}: {str(e)}")
+            # Continue with the upload process even if deletion fails
+            
     if 'video' not in request.files:
         return jsonify({"success": False, "message": "No video uploaded."})
 
@@ -292,12 +267,15 @@ def upload_video():
         filepath = os.path.join(app.config['VIDEO_UPLOAD_FOLDER'], filename)
         video.save(filepath)
 
+        replaced_flag = request.form.get('replaced', 'false').lower() == 'true'
+
         mongo.db.videos.insert_one({
             "username": session['username'],
             "filename": filename,
             "original_filename": original_filename,
             "filepath": filepath,
-            "upload_time": datetime.now()
+            "upload_time": datetime.now(),
+            "replaced": replaced_flag
         })
 
         return jsonify({"success": True, "filename": filename, "original_filename": original_filename})
@@ -336,19 +314,255 @@ def process_action():
     source_lang = request.form.get('sourceLang')
     target_lang = request.form.get('targetLang')
     action_type = request.form.get('actionType')
+    voice_choice = request.form.get("Voice")  # Default to John
 
-    transcript_text, translation_text = "", ""
+    filename = "static/status/current.mp4"  # Set the filename for MongoDB use
+    original_filename = request.form.get("original_filename", "unknown.mp4") 
+    # Always start with transcription
+    segments, mp3_path = perform_transcription(filename, source_lang)
+    formatted_transcript = format_segments_to_text(segments)
+        # Now uses the updated perform_translation
+    translated_segments = perform_translation(segments, source_lang, target_lang)
+    formatted_translation = format_segments_to_text([
+        {"start": seg["start"], "end": seg["end"], "text": seg["text"]}
+        for seg in translated_segments
+    ])   
 
-    if action_type == 'transcribe':
-        transcript_text = perform_transcription('static/status/current.mp4', source_lang)
-    elif action_type == 'translate':
-        transcript_text = perform_transcription('static/status/current.mp4', source_lang)
-        translation_text = perform_translation(transcript_text, source_lang, target_lang)
 
+    if action_type == 'translate':
+        cond = translate_video(filename, mp3_path, translated_segments, target_lang, voice_choice)
+        if cond:
+            print("video translated successfully")
+
+            translated_video_path = "static/completed/translated_video.mp4"
+            username = session.get("username")
+            metadata = {
+                "username": username,
+                "filename": os.path.basename(filename),
+                "original_filename": original_filename,
+                "source_language": source_lang,
+                "target_language": target_lang,
+                "datetime": datetime.now()
+            }
+
+            video_id = save_translated_video_to_db(translated_video_path, metadata)
+
+            if video_id:
+                # Lookup the original video entry to fetch the original filename
+                video_entry = mongo.db.video.find_one({
+                    "username": session["username"],
+                    "filename": {"$regex": ".*current\\.mp4$"}  # Match the UUID-prefixed filename ending in current.mp4
+                })
+
+                original_filename = video_entry.get("original_filename", "unknown.mp4") if video_entry else "unknown.mp4"
+
+                document = {
+                    "username": username,
+                    "filename": os.path.basename(filename),
+                    "original_filename": original_filename, 
+                    "source_language": source_lang,
+                    "target_language": target_lang,
+                    "datetime": datetime.now(),
+                    "translated_text": formatted_translation.strip(),
+                    "original_text": formatted_transcript.strip(),
+                    "translated_video": video_id
+                }
+                translation_collection.insert_one(document)
+
+                print(f"Translation and DB insert successful for {filename}")
+            else:
+                print("Failed to save translated video to DB.")
+     
+     
+    
+    elif(action_type == 'transcribe'):
+        username = session.get("username")
+        try:
+            document = {
+                "username": username,
+                "filename": os.path.basename(filename),
+                "source_language": source_lang,
+                "target_language": target_lang,
+                "datetime": datetime.now(),
+                "translated_text": formatted_translation.strip(),
+                "original_text": formatted_transcript.strip(),
+                "translated_video": None
+            }
+            translation_collection.insert_one(document)
+            print(f"Translation and DB insert successful for {filename}")
+        except Exception as e:
+                print("Error saving to MongoDB:", e)
+    
+      
     return jsonify({
-        'transcript': transcript_text,
-        'translation': translation_text
-    })
+        'transcript': formatted_transcript,
+        'translation': formatted_translation,
+        'refresh': True  # Add this flag
 
+    })
+    
+def format_segments_to_text(segments):
+    """Format segments into a readable text with timestamps"""
+    formatted_text = ""
+    for segment in segments:
+        formatted_text += f"[{segment['start']:.2f}s -> {segment['end']:.2f}s] {segment['text']}\n"
+    return formatted_text
+
+def save_translated_video_to_db(video_path, metadata):
+    try:
+        # Check if the video file exists
+        if not os.path.exists(video_path):
+            print(f"Error: Video file not found at {video_path}")
+            return None
+            
+        # Open and save video file to GridFS
+        with open(video_path, 'rb') as video_file:
+            video_id = fs.put(
+                video_file,
+                filename=os.path.basename(video_path),
+                content_type='video/mp4',
+                metadata=metadata
+            )
+                   
+        return video_id
+    except Exception as e:
+        print(f"Error saving video to GridFS: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+from datetime import timedelta
+
+@app.route('/get_video_history', methods=['GET'])
+def get_video_history():
+    username = session.get("username")
+    if not username:
+        return jsonify({"error": "User not logged in"}), 401
+
+    history = list(translation_collection.find({"username": username}).sort("datetime", 1))
+    videos = []
+
+    for entry in history:
+        entry_time = entry.get("datetime")
+        original_filename = "Not_Saved.mp4"
+
+        if entry_time:
+            # Try to find a matching video using exact datetime match
+            matching_video = mongo.db.videos.find_one({
+                "username": username,
+                "upload_time": {
+                    "$gte": entry_time - timedelta(seconds=180),
+                    "$lte": entry_time + timedelta(seconds=180)
+                }
+            })
+
+            if matching_video:
+                original_filename = matching_video.get("original_filename", "original_filename")
+
+        translated_video_id = str(entry.get("translated_video")) if entry.get("translated_video") else None
+        datetime_str = entry_time.strftime('%Y-%m-%d %H:%M:%S') if entry_time else "Unknown"
+
+        thumbnail_path = url_for('static', filename='thmb/default_thumbnail.png')
+
+        video_data = {
+            "filename": entry.get("filename", "unknown.mp4"),
+            "original_filename": original_filename,
+            "source_language": entry.get("source_language", ""),
+            "target_language": entry.get("target_language", ""),
+            "datetime": datetime_str,
+            "translated_text": entry.get("translated_text", ""),
+            "original_text": entry.get("original_text", ""),
+            "translated_video_id": translated_video_id,
+            "thumbnail_url": thumbnail_path
+        }
+
+        videos.append(video_data)
+
+    return jsonify(videos)
+
+
+@app.route('/video/<video_id>')
+def get_video(video_id):
+    try:
+        file_id = ObjectId(video_id)
+        grid_out = fs.get(file_id)
+        
+        # Get file size
+        file_size = grid_out.length
+        
+        # Handle range requests
+        range_header = request.headers.get('Range', None)
+        if range_header:
+            byte_start, byte_end = range_header.replace('bytes=', '').split('-')
+            byte_start = int(byte_start)
+            byte_end = int(byte_end) if byte_end else file_size - 1
+            
+            # Skip to the requested position
+            grid_out.seek(byte_start)
+            data = grid_out.read(byte_end - byte_start + 1)
+            
+            rv = Response(
+                data,
+                206,
+                mimetype=grid_out.content_type,
+                direct_passthrough=True
+            )
+            rv.headers.add('Content-Range', f'bytes {byte_start}-{byte_end}/{file_size}')
+        else:
+            # Return the whole file
+            rv = Response(
+                grid_out,
+                200,
+                mimetype=grid_out.content_type,
+                direct_passthrough=True
+            )
+        
+        rv.headers.add('Accept-Ranges', 'bytes')
+        rv.headers.add('Content-Disposition', f'inline; filename={grid_out.filename}')
+        return rv
+    except Exception as e:
+        print(f"Error retrieving video: {e}")
+        return "Video not found", 404
+
+@app.route('/thumbnail/')
+def get_thumbnail(video_id):
+    try:
+        return send_file(
+            os.path.join('static', 'thumbnails', 'thumbnail_default.png'),
+            mimetype='image/png',
+            as_attachment=False
+        )
+    except Exception as e:
+        print(f"Error returning default thumbnail: {e}")
+        return "Thumbnail not found", 404
+
+@app.route('/get_latest_original_filename')
+def get_latest_original_filename_route():
+    if 'username' not in session:
+        return jsonify({"success": False, "message": "Not logged in."}), 403
+    
+    latest_video = mongo.db.videos.find_one(
+        {"username": session['username']},
+        sort=[("upload_time", -1)]
+    )
+    
+    if latest_video:
+        original_filename = latest_video.get("original_filename", "unknown.mp4")
+        return jsonify({"success": True, "original_filename": original_filename})
+    
+    return jsonify({"success": False, "message": "No videos found."}), 404
+
+def get_latest_video_metadata(username):
+    """
+    Retrieves metadata for the latest video uploaded by a specific user
+    Returns a dictionary with video metadata or None if no video found
+    """
+    latest_video = mongo.db.videos.find_one(
+        {"username": username},
+        sort=[("upload_time", -1)]
+    )
+    
+    return latest_video
+    
 if __name__ == "__main__":
     app.run(debug=True)

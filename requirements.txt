@@ -9,4 +9,6 @@ transformers
 whisper
 moviepy
 pydub
+soundfile
+math
 git+https://github.com/openai/whisper.git
